@@ -2,6 +2,8 @@ const express = require("express"); // Express 웹 프레임워크
 const mysql = require("mysql"); // MySQL 데이터베이스
 const path = require("path"); // 경로 관련 유틸리티
 const static = require("serve-static"); // 정적 파일 서비스 모듈
+const jwt = require('jsonwebtoken');
+var board = require('./board.js'); // svr.js 모듈을 가져옵니다.
 const dbconfig = require("./config/dbconfig.json"); // 데이터베이스 구성 파일
 // MySQL 데이터베이스 연결 풀을 생성합니다.
 const pool = mysql.createPool({
@@ -30,6 +32,7 @@ app.get("/", (req, res) => {
 app.post("/process/login", (req, res) => {
   console.log("/process/login 호출됨" + req);
   const paramId = req.body.id;
+  const paramName = req.body.name;
   const paramPassword = req.body.password;
   console.log("로그인 요청" + paramId + "" + paramPassword);
   // 데이터베이스 연결 풀에서 커넥션을 가져옵니다.
@@ -45,7 +48,7 @@ app.post("/process/login", (req, res) => {
     // 사용자 인증을 위해 데이터베이스에서 쿼리를 실행합니다.
     const exec = conn.query(
       "select `id`, `name` from `users` where `id`=? and `password`= md5(?)",
-      [paramId, paramPassword],
+      [paramId,  paramPassword],
       (err, rows) => {
         conn.release();
         console.log("실행된 SQL query:" + exec.sql);
@@ -63,9 +66,25 @@ app.post("/process/login", (req, res) => {
             paramId,
             rows[0].name
           );
-          res.writeHead("302", { Location: "http://localhost:3001" });
+        
+          const token = jwt.sign(
+            {
+              type: "JWT",
+              name: rows[0].name,
+            },
+            "YOUR_SECRET_KEY", // 적절한 비밀키로 변경해야 합니다.
+            {
+              expiresIn: "1m", // 만료시간 1분
+              issuer: "yhw",
+            }
+          );
+        
+          res.cookie('jwt', token);
+          res.writeHead(302, { Location: "http://localhost:3001" });
+          
           res.end();
           return;
+        
         } else {
           console.log("아이디[%s], 패스워드가 일치하는게 없음 ", paramId);
           res.writeHead("200", { "content-type": "text/html; charset=utf8" });
@@ -225,7 +244,9 @@ app.post("/process/adduser", (req, res) => {
     );
   });
 });
+
+
 // 3000번 포트에서 서버를 시작합니다.
-app.listen(3000, () => {
-  console.log("Listening on port 3000");
+ app.listen(3000, () => {
+  console.log(`server on 3000`);
 });

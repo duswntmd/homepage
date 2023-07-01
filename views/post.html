@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+
+</head>
+<body>
+  <h2><%= post.title %></h2>
+  <div id="image-container">
+  <img src="/uploads/<%= post.image_url1 %>" alt="Image 1" onclick="selectImage(0)">
+  <img src="/uploads/<%= post.image_url2 %>" alt="Image 2" onclick="selectImage(1)">
+  
+</div>
+<script src="board.js" type="module"></script>
+  <script>
+   const selectedIndexes = [];
+  
+    function selectImage(index) {
+    if (selectedIndexes.includes(index)) {
+      return;
+    }
+  
+    selectedIndexes.push(index);
+    if (selectedIndexes.length === 2) {
+      const winnerIndex = Math.floor(Math.random() * 2);
+      selectedIndexes.splice(winnerIndex === 0 ? 1 : 0, 1);
+      resetImages();
+    }
+  }
+  
+  function resetImages() {
+    const images = document.querySelectorAll('#image-container img');
+    images.forEach((image, index) => {
+      if (selectedIndexes.includes(index)) {
+        image.style.display = 'block';
+      } else {
+        image.style.display = 'none';
+      }
+    });
+  }
+  </script>
+  <p><%= post.content %></p>
+  
+  <a href="/edit?id=<%= post.id %>">수정</a>
+  <a href="/delete?id=<%= post.id %>">삭제</a>
+</body>
+</html>
